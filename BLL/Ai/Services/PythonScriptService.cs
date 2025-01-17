@@ -10,8 +10,8 @@ namespace BLL.Ai.Services
         private readonly string _scriptPath;
         private Process _process;
         private StreamWriter _writer;
-        private StreamReader _reader;
-        private StreamReader _errorReader;
+        private StringBuilder _outputBuffer;
+        private TaskCompletionSource<bool> _readinessTask;
 
         public PythonScriptService(string scriptPath)
         {
@@ -49,14 +49,45 @@ namespace BLL.Ai.Services
                 CreateNoWindow = true
             };
 
+            _outputBuffer = new StringBuilder();
+            _readinessTask = new TaskCompletionSource<bool>();
+
             _process = new Process { StartInfo = psi };
+
+            // Attach output and error handlers
+            _process.OutputDataReceived += (sender, args) =>
+            {
+                if (!string.IsNullOrWhiteSpace(args.Data))
+                {
+                    Debug.WriteLine($"[Python Output]: {args.Data}");
+                    _outputBuffer.AppendLine(args.Data);
+
+                    // Signal readiness if a specific line is detected
+                    if (args.Data.Contains("Python model ready", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _readinessTask.TrySetResult(true);
+                    }
+                }
+            };
+
+            _process.ErrorDataReceived += (sender, args) =>
+            {
+                if (!string.IsNullOrWhiteSpace(args.Data))
+                {
+                    Debug.WriteLine($"[Python Error]: {args.Data}");
+                }
+            };
+
             _process.Start();
 
-            _writer = _process.StandardInput;
-            _reader = _process.StandardOutput;
-            _errorReader = _process.StandardError;
+            // Start reading output and error streams asynchronously
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
 
-            await WaitForReadinessAsync();
+            _writer = _process.StandardInput;
+
+            // Wait for readiness signal
+            await _readinessTask.Task;
         }
 
         public async Task<string> SendInputAsync(string input)
@@ -69,9 +100,9 @@ namespace BLL.Ai.Services
             await _writer.WriteLineAsync(input);
             await _writer.FlushAsync();
 
-            var line = await _reader.ReadLineAsync();
-
-            return line;
+            // Wait for the next output line asynchronously
+            var output = await ReadNextOutputAsync();
+            return output;
         }
 
         public void Stop()
@@ -89,8 +120,6 @@ namespace BLL.Ai.Services
             }
 
             _writer?.Dispose();
-            _reader?.Dispose();
-            _errorReader?.Dispose();
             _process?.Dispose();
         }
 
@@ -98,21 +127,28 @@ namespace BLL.Ai.Services
 
         #region Private Methods
 
-        private async Task WaitForReadinessAsync()
+        private async Task<string> ReadNextOutputAsync()
         {
-            var isReady = false;
-            while (!isReady && !_reader.EndOfStream)
-            {
-                var line = await _reader.ReadLineAsync();
-                if (line != null && line.Contains("Python model ready", StringComparison.OrdinalIgnoreCase))
-                {
-                    isReady = true;
-                }
-            }
+            var tcs = new TaskCompletionSource<string>();
+            DataReceivedEventHandler handler = null;
 
-            if (!isReady)
+            handler = (sender, args) =>
             {
-                throw new InvalidOperationException("Python script did not become ready.");
+                if (!string.IsNullOrWhiteSpace(args.Data))
+                {
+                    tcs.TrySetResult(args.Data);
+                }
+            };
+
+            _process.OutputDataReceived += handler;
+
+            try
+            {
+                return await tcs.Task;
+            }
+            finally
+            {
+                _process.OutputDataReceived -= handler;
             }
         }
 
