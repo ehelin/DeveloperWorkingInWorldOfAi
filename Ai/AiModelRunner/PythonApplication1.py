@@ -142,7 +142,7 @@ if __name__ == "__main__":
             
             response = generate_response(input_text)
 
-            # print("Model:", response)
+            print("Model:", response)
     else:
         # print("Running in main mode.")
         main()
