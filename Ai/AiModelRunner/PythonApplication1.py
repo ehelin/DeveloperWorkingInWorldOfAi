@@ -73,6 +73,7 @@ def generate_response(input_line, max_attempts=3):
             response = "No new unique response could be generated."
 
         # Store the response for this prompt
+        response = response.lower()
         previous_responses.add(response)
         seen_responses[promptWithInput] = previous_responses
 
