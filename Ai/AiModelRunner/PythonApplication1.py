@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import sys
 import json
+import torch
 
 # Load the tokenizer and model from Hugging Face
 model_name = "microsoft/Phi-3.5-mini-instruct"
@@ -11,20 +12,19 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 seen_responses = {}
 
 def filter_response(response, src_string, add_length):    
+    """Removes or trims response based on a given source string."""
     pos = response.find(src_string)
     if pos != -1:
         if add_length:
             response = response[pos + len(src_string):]
         else:    
             response = response[:pos]
-
     return response
 
 def generate_response(input_line, max_attempts=3):
+    """Generates a response using Phi-3.5-mini while ensuring uniqueness."""
     try:
-        # prompt = "Please respond to the following question independently:"
-        # promptWithInput = "Suggest a habit to track for improving mental health. Respond strictly in this format and do not repeat this instruction or provide an example:\nHabit Name: [Name of the habit]\nBrief Description: [Brief explanation of how it benefits mental health]"
-        promptWithInput = "Suggest a habit to track for improving health. Provide the response only in this exact format:\nHabit Name:[Name of the habit]\nDo not repeat the prompt or provide any additional context."
+        promptWithInput = "Please give a response of less than 5 words"
 
         # Check if this prompt has been processed before
         if promptWithInput in seen_responses:
@@ -40,13 +40,16 @@ def generate_response(input_line, max_attempts=3):
 
             # Encode the input text
             inputs = tokenizer(promptWithInput, return_tensors="pt")
+
+            # Ensure model is running on the correct device (CPU/GPU)
+            inputs = {k: v.to(model.device) for k, v in inputs.items()}
             
             # Generate a response with adjusted parameters
             outputs = model.generate(
                 **inputs,
-                max_length=100,
+                max_length=20,  # Shorter output to match "less than 5 words"
                 do_sample=True,  # Enable sampling for varied responses
-                temperature=0.9,  # Add randomness
+                temperature=0.7,  # Adjust randomness
                 top_p=0.9,  # Enable nucleus sampling
                 num_return_sequences=1,
                 pad_token_id=tokenizer.eos_token_id
@@ -56,16 +59,15 @@ def generate_response(input_line, max_attempts=3):
             if outputs.size(0) > 0:
                 response = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-                # Filter and clean up the response
+                # Clean up the response
                 response = filter_response(response, "Habit Name:[", True)
                 response = filter_response(response, "Habit Name:", True)
-                response = filter_response(response, "\n", False)      
-                # response = response.replace(prompt, "")
+                response = filter_response(response, "\n", False)
                 response = response.replace(input_line, "")
                 response = response.replace(":", "")
                 response = response.replace("\n", "")
 
-                # Check if the response is unique
+                # Ensure response is unique
                 if response not in previous_responses:
                     break  # Unique response found
 
@@ -82,33 +84,39 @@ def generate_response(input_line, max_attempts=3):
         return f"An error occurred: {str(e)}"
 
 def main():
+    """Handles interaction with C# via stdin/stdout."""
     print("Python model ready")  # Signal to C# that Python is ready
     sys.stdout.flush()
 
     while True:
-        # Read input from standard input
-        input_line = sys.stdin.readline().strip()
-        
-        # Exit condition
-        if input_line == "exit":
-            print("Python exiting")
-            sys.stdout.flush()
-            break
-        
-        # Generate response
-        response = generate_response(input_line)
+        try:
+            # Read input from standard input
+            input_line = sys.stdin.readline().strip()
 
-        # Debugging information (optional)
-        sys.stderr.write(f"DEBUG: Output generated: {response}\n")
-        sys.stderr.flush()
-        
-        print(response)
-        sys.stdout.flush()
+            # Exit condition
+            if input_line.lower() == "exit":
+                print("Python exiting")
+                sys.stdout.flush()
+                break
+
+            # Generate response
+            response = generate_response(input_line)
+
+            # Debugging information (optional)
+            sys.stderr.write(f"DEBUG: Output generated: {response}\n")
+            sys.stderr.flush()
+
+            print(response)
+            sys.stdout.flush()
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            sys.stdout.flush()
 
 if __name__ == "__main__":
-    print("Starting python script...")
+    print("Starting Python script...")
 
-    if sys.stdin.isatty():
+    if sys.stdin.isatty():  # Running in CLI mode
         print("Running in interactive mode. Type 'exit' to quit.")
         while True:
             input_text = input("You: ")
@@ -117,8 +125,8 @@ if __name__ == "__main__":
                 break
             
             response = generate_response(input_text)
-
             print("Model:", response)
-    else:
-        print("Running in main mode.")
+
+    else:  # Running inside C# service
+        print("Running in main mode (C# integration).")
         main()
