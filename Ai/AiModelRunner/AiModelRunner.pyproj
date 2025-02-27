@@ -27,7 +27,13 @@
     <Compile Include="chatLlama2.py" />
     <Compile Include="chat.py" />
     <Compile Include="commandpromptinterface.py" />
+    <Compile Include="fine_tune_phi3.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="PythonApplication1.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="habits_train.jsonl" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

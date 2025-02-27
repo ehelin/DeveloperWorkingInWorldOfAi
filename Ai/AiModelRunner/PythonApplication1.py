@@ -4,7 +4,9 @@ import json
 import torch
 
 # Load the tokenizer and model from Hugging Face
-model_name = "microsoft/Phi-3.5-mini-instruct"
+# model_name = "microsoft/Phi-3.5-mini-instruct"
+# model_name = "./phi3_finetuned_model"
+model_name = "./phi3_finetuned_model"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
@@ -24,7 +26,7 @@ def filter_response(response, src_string, add_length):
 def generate_response(input_line, max_attempts=3):
     """Generates a response using Phi-3.5-mini while ensuring uniqueness."""
     try:
-        promptWithInput = "Please give a response of less than 5 words"
+        promptWithInput = input_line #"Please give a response of less than 5 words"
 
         # Check if this prompt has been processed before
         if promptWithInput in seen_responses:
@@ -47,7 +49,7 @@ def generate_response(input_line, max_attempts=3):
             # Generate a response with adjusted parameters
             outputs = model.generate(
                 **inputs,
-                max_length=20,  # Shorter output to match "less than 5 words"
+                max_length=50,  # Shorter output to match "less than 5 words"
                 do_sample=True,  # Enable sampling for varied responses
                 temperature=0.7,  # Adjust randomness
                 top_p=0.9,  # Enable nucleus sampling
