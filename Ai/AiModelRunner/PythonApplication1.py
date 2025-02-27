@@ -49,10 +49,9 @@ def generate_response(input_line, max_attempts=3):
             # Generate a response with adjusted parameters
             outputs = model.generate(
                 **inputs,
-                max_length=50,  # Shorter output to match "less than 5 words"
-                do_sample=True,  # Enable sampling for varied responses
-                temperature=0.7,  # Adjust randomness
-                top_p=0.9,  # Enable nucleus sampling
+                max_length=30,  # Reduce long, unfocused outputs
+                temperature=0.5,  # Makes responses more controlled
+                top_p=0.85,  # Prevents overly random responses
                 num_return_sequences=1,
                 pad_token_id=tokenizer.eos_token_id
             )
@@ -64,8 +63,8 @@ def generate_response(input_line, max_attempts=3):
                 # Clean up the response
                 response = filter_response(response, "Habit Name:[", True)
                 response = filter_response(response, "Habit Name:", True)
-                response = filter_response(response, "\n", False)
                 response = response.replace(input_line, "")
+                response = filter_response(response, "\n", False)
                 response = response.replace(":", "")
                 response = response.replace("\n", "")
 

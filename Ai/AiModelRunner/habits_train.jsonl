@@ -1,5 +1,10 @@
-{"input": "Suggest a habit to track for improving health.", "output": "Drink more water"}
-{"input": "Suggest a habit to track for mental well-being.", "output": "Practice daily gratitude"}
-{"input": "Suggest a fitness habit to track.", "output": "Exercise for 30 minutes daily"}
-{"input": "Give me a habit to improve focus.", "output": "Meditate for 10 minutes"}
-{"input": "Suggest a habit to improve sleep.", "output": "Go to bed at 10 PM"}
+{"input": "Suggest a habit to track for improving health.", "output": "Drink 2 liters of water daily."}
+{"input": "Suggest a habit to track for mental well-being.", "output": "Practice 5 minutes of deep breathing daily."}
+{"input": "Suggest a habit for better sleep.", "output": "Avoid screens 30 minutes before bed."}
+{"input": "Provide a habit that can be tracked for focus.", "output": "Use the Pomodoro technique (25 min focus, 5 min break)."}
+{"input": "Give a daily habit for better productivity.", "output": "Plan the day with a to-do list every morning."}
+{"input": "Suggest a habit to track for fitness.", "output": "Exercise for 30 minutes daily."}
+{"input": "Suggest a habit for financial savings.", "output": "Save $5 per day in a separate account."}
+{"input": "Recommend a tracking habit for stress reduction.", "output": "Write 3 things you're grateful for each night."}
+{"input": "Suggest a habit to improve nutrition.", "output": "Eat one serving of vegetables with every meal."}
+{"input": "What is a good habit to track for improving relationships?", "output": "Send one thoughtful message to a friend daily."}
