@@ -6,7 +6,7 @@ import torch
 # Load the tokenizer and model from Hugging Face
 # model_name = "microsoft/Phi-3.5-mini-instruct"
 # model_name = "./phi3_finetuned_model"
-model_name = "./phi3_finetuned_model"
+model_name = "./phi3_finetuned_long"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
@@ -47,26 +47,35 @@ def generate_response(input_line, max_attempts=3):
             inputs = {k: v.to(model.device) for k, v in inputs.items()}
             
             # Generate a response with adjusted parameters
+            # outputs = model.generate(
+            #     **inputs,
+            #     max_length=30,  # Reduce long, unfocused outputs
+            #     temperature=0.5,  # Makes responses more controlled
+            #     top_p=0.85,  # Prevents overly random responses
+            #     num_return_sequences=1,
+            #     pad_token_id=tokenizer.eos_token_id
+            # )
             outputs = model.generate(
                 **inputs,
-                max_length=30,  # Reduce long, unfocused outputs
-                temperature=0.5,  # Makes responses more controlled
-                top_p=0.85,  # Prevents overly random responses
-                num_return_sequences=1,
-                pad_token_id=tokenizer.eos_token_id
+                max_new_tokens=30,
+                num_beams=5,  # Still ensures structure
+                do_sample=True,  # Enable sampling to avoid repetition
+                temperature=0.7,  # Slight randomness (adjust as needed)
+                top_p=0.9  # Nucleus sampling
             )
+
 
             # Decode the response
             if outputs.size(0) > 0:
                 response = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
                 # Clean up the response
-                response = filter_response(response, "Habit Name:[", True)
-                response = filter_response(response, "Habit Name:", True)
+                # response = filter_response(response, "Habit Name:[", True)
+                # response = filter_response(response, "Habit Name:", True)
                 response = response.replace(input_line, "")
-                response = filter_response(response, "\n", False)
-                response = response.replace(":", "")
-                response = response.replace("\n", "")
+                # response = filter_response(response, "\n", False)
+                # response = response.replace(":", "")
+                # response = response.replace("\n", "")
 
                 # Ensure response is unique
                 if response not in previous_responses:

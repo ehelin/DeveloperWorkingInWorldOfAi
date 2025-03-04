@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>e50e4a3f-c769-4014-bc63-72b39ce110e0</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>fine_tune_phi3.py</StartupFile>
+    <StartupFile>PythonApplication1.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
